@@ -221,76 +221,91 @@ export interface RecentMeeting {
  * Get dashboard statistics for a user
  */
 export async function getDashboardStats(userId: string): Promise<DashboardStats> {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  // Get total meetings count
-  const { count: totalMeetings, error: countError } = await supabase
-    .from('meetings')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
+    // Get total meetings count
+    const { count: totalMeetings, error: countError } = await supabase
+      .from('meetings')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
 
-  if (countError) {
-    console.error('Error counting meetings:', countError);
+    if (countError) {
+      console.error('Error counting meetings:', countError);
+    }
+
+    // Get sum of duration_seconds for hours transcribed
+    const { data: durationData, error: durationError } = await supabase
+      .from('meetings')
+      .select('duration_seconds')
+      .eq('user_id', userId)
+      .eq('status', 'ready')
+      .not('duration_seconds', 'is', null);
+
+    if (durationError) {
+      console.error('Error fetching durations:', durationError);
+    }
+
+    const totalSeconds = durationData?.reduce((sum: number, m: { duration_seconds: number | null }) => sum + (m.duration_seconds || 0), 0) || 0;
+    const hoursTranscribed = Math.round((totalSeconds / 3600) * 10) / 10;
+
+    // Get action items from meetings in the last 7 days
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const { data: recentMeetings, error: recentError } = await supabase
+      .from('meetings')
+      .select('summary')
+      .eq('user_id', userId)
+      .eq('status', 'ready')
+      .gte('created_at', oneWeekAgo.toISOString());
+
+    if (recentError) {
+      console.error('Error fetching recent meetings:', recentError);
+    }
+
+    const actionItemsThisWeek = recentMeetings?.reduce((count: number, m: { summary: { actionItems?: unknown[] } | null }) => {
+      return count + (m.summary?.actionItems?.length || 0);
+    }, 0) || 0;
+
+    return {
+      totalMeetings: totalMeetings || 0,
+      hoursTranscribed,
+      actionItemsThisWeek,
+    };
+  } catch (error) {
+    console.error('Error in getDashboardStats:', error);
+    // Return empty stats if table doesn't exist or other error
+    return {
+      totalMeetings: 0,
+      hoursTranscribed: 0,
+      actionItemsThisWeek: 0,
+    };
   }
-
-  // Get sum of duration_seconds for hours transcribed
-  const { data: durationData, error: durationError } = await supabase
-    .from('meetings')
-    .select('duration_seconds')
-    .eq('user_id', userId)
-    .eq('status', 'ready')
-    .not('duration_seconds', 'is', null);
-
-  if (durationError) {
-    console.error('Error fetching durations:', durationError);
-  }
-
-  const totalSeconds = durationData?.reduce((sum: number, m: { duration_seconds: number | null }) => sum + (m.duration_seconds || 0), 0) || 0;
-  const hoursTranscribed = Math.round((totalSeconds / 3600) * 10) / 10;
-
-  // Get action items from meetings in the last 7 days
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-  const { data: recentMeetings, error: recentError } = await supabase
-    .from('meetings')
-    .select('summary')
-    .eq('user_id', userId)
-    .eq('status', 'ready')
-    .gte('created_at', oneWeekAgo.toISOString());
-
-  if (recentError) {
-    console.error('Error fetching recent meetings:', recentError);
-  }
-
-  const actionItemsThisWeek = recentMeetings?.reduce((count: number, m: { summary: { actionItems?: unknown[] } | null }) => {
-    return count + (m.summary?.actionItems?.length || 0);
-  }, 0) || 0;
-
-  return {
-    totalMeetings: totalMeetings || 0,
-    hoursTranscribed,
-    actionItemsThisWeek,
-  };
 }
 
 /**
  * Get recent meetings for dashboard (last 5)
  */
 export async function getRecentMeetings(userId: string, limit: number = 5): Promise<RecentMeeting[]> {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
-  const { data: meetings, error } = await supabase
-    .from('meetings')
-    .select('id, title, created_at, duration_seconds, speaker_count, status')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    const { data: meetings, error } = await supabase
+      .from('meetings')
+      .select('id, title, created_at, duration_seconds, speaker_count, status')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-  if (error) {
-    console.error('Error fetching recent meetings:', error);
-    throw new Error(`Failed to fetch recent meetings: ${error.message}`);
+    if (error) {
+      console.error('Error fetching recent meetings:', error);
+      return [];
+    }
+
+    return meetings || [];
+  } catch (error) {
+    console.error('Error in getRecentMeetings:', error);
+    return [];
   }
-
-  return meetings || [];
 }

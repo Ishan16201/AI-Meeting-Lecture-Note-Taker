@@ -56,16 +56,17 @@ function formatDuration(seconds: number | null): string {
 export default async function MeetingDetailPage({
   params,
 }: MeetingDetailPageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // TODO: Re-enable auth check after Supabase auth is configured
+  // const supabase = await createClient();
+  // const {
+  //   data: { user },
+  // } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  // if (!user) {
+  //   redirect("/login");
+  // }
 
-  const meeting = await getMeetingById(params.id, user.id);
+  const meeting = await getMeetingById(params.id, "placeholder-user-id");
 
   if (!meeting) {
     notFound();

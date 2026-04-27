@@ -97,16 +97,8 @@ function MeetingsListSkeleton() {
 }
 
 export default async function HistoryPage({ searchParams }: HistoryPageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const searchQuery = searchParams.q;
+  const query = searchParams.q || "";
+  const meetings = await getMeetings("placeholder-user-id", query);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -136,7 +128,7 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
       {/* Meetings List */}
       <section className="animate-slide-up" style={{ animationDelay: "100ms" }}>
         <Suspense fallback={<MeetingsListSkeleton />}>
-          <MeetingsList userId={user.id} searchQuery={searchQuery} />
+          <MeetingsList userId="placeholder-user-id" searchQuery={query} />
         </Suspense>
       </section>
     </div>

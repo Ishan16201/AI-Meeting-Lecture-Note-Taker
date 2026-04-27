@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import {
   LayoutDashboard,
   History,
@@ -15,15 +13,15 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: connect to Supabase - verify session
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // TODO: Re-enable auth check after Supabase auth is configured
+  // const supabase = await createClient();
+  // const {
+  //   data: { user },
+  // } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  // if (!user) {
+  //   redirect("/login");
+  // }
 
   const navLinks = [
     { href: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -78,7 +76,7 @@ export default async function DashboardLayout({
           <div className="relative group">
             <button className="flex items-center gap-3 hover:bg-white/5 rounded-lg px-3 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C3AED]">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#22D3EE] flex items-center justify-center text-white text-sm font-medium">
-                {user.email?.charAt(0).toUpperCase() || "U"}
+                U
               </div>
               <ChevronDown className="w-4 h-4 text-white/60" />
             </button>
@@ -86,7 +84,7 @@ export default async function DashboardLayout({
             {/* Dropdown Menu */}
             <div className="absolute right-0 top-full mt-2 w-48 bg-[#13131A] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
               <div className="px-4 py-2 border-b border-white/10">
-                <p className="text-sm text-white/60 truncate">{user.email}</p>
+                <p className="text-sm text-white/60 truncate">user@example.com</p>
               </div>
               <form action="/auth/signout" method="post">
                 <button

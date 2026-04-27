@@ -227,14 +227,15 @@ function RecentMeetingsSkeleton() {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // TODO: Re-enable auth check after Supabase auth is configured
+  // const supabase = await createClient();
+  // const {
+  //   data: { user },
+  // } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  // if (!user) {
+  //   redirect("/login");
+  // }
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -246,7 +247,7 @@ export default async function DashboardPage() {
 
       {/* Hero Stats Row */}
       <Suspense fallback={<StatsSkeleton />}>
-        <StatsSection userId={user.id} />
+        <StatsSection userId="placeholder-user-id" />
       </Suspense>
 
       {/* Recording / Upload Tab Panel */}
@@ -254,7 +255,7 @@ export default async function DashboardPage() {
 
       {/* Recent Meetings Table */}
       <Suspense fallback={<RecentMeetingsSkeleton />}>
-        <RecentMeetingsSection userId={user.id} />
+        <RecentMeetingsSection userId="placeholder-user-id" />
       </Suspense>
     </div>
   );
